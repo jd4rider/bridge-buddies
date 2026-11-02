@@ -2,6 +2,8 @@ import {
   Color3,
   Mesh,
   MeshBuilder,
+  PhysicsAggregate,
+  PhysicsShapeType,
   Scene,
   StandardMaterial,
   TransformNode,
@@ -19,6 +21,8 @@ export interface DebrisPiece {
   spin: Vector3
   life: number
   inWater: boolean
+  /** Set when Havok took ownership of this piece. */
+  aggregate: PhysicsAggregate | null
 }
 
 /**
@@ -76,7 +80,10 @@ export class BridgeView {
     for (const mesh of this.jointMeshes.values()) mesh.dispose()
     this.memberMeshes.clear()
     this.jointMeshes.clear()
-    for (const piece of this.debris) piece.mesh.dispose()
+    for (const piece of this.debris) {
+      piece.aggregate?.dispose()
+      piece.mesh.dispose()
+    }
     this.debris = []
   }
 
@@ -251,12 +258,35 @@ export class BridgeView {
       clone.isVisible = true
       clone.setParent(this.debrisRoot)
       clone.isPickable = false
+      const velocity = new Vector3(
+        (Math.random() - 0.5) * 2.4,
+        -1 - Math.random(),
+        (Math.random() - 0.5) * 1.6,
+      )
+      const spin = new Vector3(
+        (Math.random() - 0.5) * 3,
+        (Math.random() - 0.5) * 1.4,
+        (Math.random() - 0.5) * 4,
+      )
+
+      let aggregate: PhysicsAggregate | null = null
+      if (this.scene.isPhysicsEnabled()) {
+        try {
+          aggregate = new PhysicsAggregate(clone, PhysicsShapeType.BOX, { mass: 1.2 }, this.scene)
+          aggregate.body.setLinearVelocity(velocity)
+          aggregate.body.setAngularVelocity(spin)
+        } catch {
+          aggregate = null
+        }
+      }
+
       this.debris.push({
         mesh: clone,
-        velocity: new Vector3((Math.random() - 0.5) * 2.4, -1 - Math.random(), (Math.random() - 0.5) * 1.6),
-        spin: new Vector3((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 4),
+        velocity,
+        spin,
         life: 5.5,
         inWater: false,
+        aggregate,
       })
     }
     this.memberMeshes.delete(memberId)
@@ -267,20 +297,27 @@ export class BridgeView {
     for (const piece of this.debris) {
       piece.life -= dt
       if (piece.life <= 0) {
+        piece.aggregate?.dispose()
         piece.mesh.dispose()
         continue
       }
       if (!piece.inWater) {
-        piece.velocity.y -= 9.81 * dt
-        piece.mesh.position.addInPlace(piece.velocity.scale(dt))
-        piece.mesh.rotation.x += piece.spin.x * dt
-        piece.mesh.rotation.y += piece.spin.y * dt
-        piece.mesh.rotation.z += piece.spin.z * dt
+        // Havok moves the body; the fallback integrates it by hand.
+        if (!piece.aggregate) {
+          piece.velocity.y -= 9.81 * dt
+          piece.mesh.position.addInPlace(piece.velocity.scale(dt))
+          piece.mesh.rotation.x += piece.spin.x * dt
+          piece.mesh.rotation.y += piece.spin.y * dt
+          piece.mesh.rotation.z += piece.spin.z * dt
+        }
         if (piece.mesh.position.y < waterY) {
           piece.inWater = true
+          piece.aggregate?.dispose()
+          piece.aggregate = null
           piece.velocity.scaleInPlace(0.12)
           piece.velocity.y = 0
           piece.spin.scaleInPlace(0.1)
+          piece.mesh.position.y = waterY
           splashes += 1
         }
       } else {
@@ -295,7 +332,10 @@ export class BridgeView {
   }
 
   clearDebris(): void {
-    for (const piece of this.debris) piece.mesh.dispose()
+    for (const piece of this.debris) {
+      piece.aggregate?.dispose()
+      piece.mesh.dispose()
+    }
     this.debris = []
   }
 

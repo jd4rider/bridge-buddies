@@ -1,11 +1,11 @@
 {
   "generator": "bridge-buddies-gen-v1",
   "solver": "bb-frame-2d-v1",
-  "generatedAt": "2026-11-02T23:35:57.788Z",
+  "generatedAt": "2026-11-02T23:59:18.618Z",
   "levels": 1000,
   "verified": 1000,
   "rejected": 0,
-  "runtimeMs": 5149,
+  "runtimeMs": 5059,
   "summary": {
     "utilizationMedian": 0.544,
     "utilizationP95": 0.749,

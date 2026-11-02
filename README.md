@@ -69,9 +69,11 @@ Verified by running it:
 
 Not done yet, and not claimed:
 
-- **Havok is not wired up.** Debris uses a small deterministic rigid-body fallback in
-  `render/bridge.ts`, not Havok. Vehicle motion is a kinematic controller on the solved
-  deck, not a Havok rigid body. This is the first thing to upgrade.
+- **The vehicle is not a Havok rigid body.** It is a kinematic controller riding the
+  solved deck, which keeps crossings deterministic for validation. Havok simulates the
+  debris, and the debris falls back to a small deterministic integrator if the wasm
+  fails to load (offline, or a browser without the required features). The bridge
+  itself is frame-solved, never Havok: a rigid-body pile is not a structural model.
 - The structural solve is planar: the deck is modelled as a matched pair of trusses
   each carrying half the vehicle, which is exact for a symmetric bridge. Out-of-plane
   sway, torsion and wind on the truss face are not simulated.

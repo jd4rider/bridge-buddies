@@ -5,6 +5,7 @@ import {
   DirectionalLight,
   DynamicTexture,
   Engine,
+  HavokPlugin,
   HemisphericLight,
   Mesh,
   MeshBuilder,
@@ -19,6 +20,8 @@ import type { LevelSpec } from '../core/types'
 import type { WorldSpec } from '../levels/worlds'
 import { mulberry32, hashString } from '../levels/generator'
 import { BridgeView } from './bridge'
+import HavokPhysics from '@babylonjs/havok'
+import havokWasmUrl from '@babylonjs/havok/lib/esm/HavokPhysics.wasm?url'
 
 function color(hex: string): Color3 {
   return Color3.FromHexString(hex)
@@ -43,6 +46,7 @@ export class Stage {
   readonly shadows: ShadowGenerator
   readonly bridge: BridgeView
   private envSeed: string | null = null
+  private physicsTried = false
   private extras: TransformNode[] = []
   private waterTexture: DynamicTexture | null = null
   private reducedMotion = false
@@ -85,6 +89,26 @@ export class Stage {
     this.bridge = new BridgeView(this.scene)
 
     window.addEventListener('resize', () => this.engine.resize())
+  }
+
+  /**
+   * Bring up Havok. Debris is simulated by the real engine; the bridge itself is
+   * frame-solved and the vehicle is kinematic on the solved deck (see
+   * STRUCTURAL.md for why those two stay custom). Failure is non-fatal: the
+   * debris falls back to the deterministic integrator.
+   */
+  async initPhysics(): Promise<boolean> {
+    if (this.scene.isPhysicsEnabled()) return true
+    if (this.physicsTried) return false
+    this.physicsTried = true
+    try {
+      const havok = await HavokPhysics({ locateFile: () => havokWasmUrl })
+      this.scene.enablePhysics(new Vector3(0, -9.81, 0), new HavokPlugin(true, havok))
+      return true
+    } catch (error) {
+      console.warn('[bridge-buddies] Havok unavailable, using the fallback debris integrator.', error)
+      return false
+    }
   }
 
   /** A small glowing ball used to show the first point of a pending member. */

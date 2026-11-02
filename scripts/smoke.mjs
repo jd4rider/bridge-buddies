@@ -43,6 +43,7 @@ console.log('objective:', (await page.textContent('#objective'))?.trim())
 await page.waitForTimeout(600)
 await shot('build-empty')
 
+console.log('havok physics:', await page.evaluate(() => window.__bb.physics()))
 const info = await page.evaluate(() => window.__bb.info())
 console.log('geometry:', JSON.stringify(info))
 

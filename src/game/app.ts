@@ -66,6 +66,7 @@ export class BridgeApp {
     this.canvas = root.querySelector('#scene') as HTMLCanvasElement
     this.stage = new Stage(this.canvas)
     this.stage.setReducedMotion(!this.save.settings.motion)
+    void this.stage.initPhysics()
     audio.setEnabled(this.save.settings.sound)
 
     this.level = generateLevel(this.save.lastLevel)
@@ -104,6 +105,7 @@ export class BridgeApp {
         anchors: this.level.anchors,
         zone: this.level.zone,
       }),
+      physics: () => this.stage.scene.isPhysicsEnabled(),
       project: (x: number, y: number) => {
         const engine = this.stage.engine
         const screen = Vector3.Project(

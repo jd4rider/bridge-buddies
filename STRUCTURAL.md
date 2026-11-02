@@ -96,6 +96,20 @@ the answer: the same design and the same load produce the same numbers on every 
 The tension-only cable pass is a bounded fixed point (at most four solves), and it
 only ever removes members that came out in compression.
 
+## Division of labour with Havok
+
+Havok is enabled on the scene and owns **detached debris**: when a member fails, that
+mesh becomes a dynamic box body with an impulse and angular velocity, so it tumbles,
+hits the water plane and is retired with a splash. If Havok cannot start (wasm blocked,
+old browser), `BridgeView` falls back to a deterministic integrator that produces the
+same splash and drift, and a console warning explains why.
+
+Havok deliberately does **not** model the bridge: a pile of rigid boxes has no reliable
+member forces, so it cannot tell the player which beam is overstressed or validate a
+level. Likewise the vehicle is kinematic on the solved deck rather than a rigid body,
+because a rigid-body vehicle would make the crossing result depend on solver timing and
+break the determinism the campaign validation depends on.
+
 ## What is not modelled
 
 - Out-of-plane sway, torsion and lateral bracing (the two truss planes are mirrored).
