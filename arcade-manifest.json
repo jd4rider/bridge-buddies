@@ -1,0 +1,33 @@
+{
+  "id": "bridge-buddies",
+  "name": "Bridge Buddies",
+  "tagline": "Build it. Test it. Get them across.",
+  "description": "A miniature 3D bridge-engineering puzzle. Buy pine, steel, aluminium or cable out of a fixed budget, tap grid points to build a truss, then press TEST and watch a little buddy drive across the span you just made. Every member carries real axial force and bending moment, so the deck sags under the wheels, overloaded sticks snap, their load shifts to their neighbours, and the pieces fall in the river. One thousand levels across twenty worlds, from a 4 m pine crossing to 13 m championship spans with 15 t loads, each one shipped with a reference bridge that an offline validator re-solves at 21 moving-load positions. No timer, no lives, unlimited undo.",
+  "categories": ["Physics", "Puzzle", "Strategy", "Casual"],
+  "runtime": "Babylon.js",
+  "version": "0.1.0",
+  "updated": "2026-11-02",
+  "status": "live",
+  "featured": true,
+  "playUrl": "https://jd4rider.github.io/bridge-buddies/play/",
+  "siteUrl": "https://jd4rider.github.io/bridge-buddies/",
+  "repoUrl": "https://github.com/jd4rider/bridge-buddies",
+  "downloads": [],
+  "cover": { "from": "#8fd0e8", "to": "#2f5d3a", "emoji": "🌉" },
+  "highlights": [
+    "A real 2D frame solver: axial force and bending moment, not a bounce animation",
+    "Bridges sag under the truck, snap when overloaded, and drop debris into the river",
+    "1000 seeded Journey levels across 20 worlds, each with a validated reference bridge",
+    "Pine, laminated, steel, aluminium, cable and concrete - each with a different job",
+    "Portrait-first touch building with two-tap or drag placement, undo and redo",
+    "Daily challenge, sandbox and free replay, fully offline"
+  ],
+  "howToPlay": [
+    "Tap one grid point, then another, to place a member. Drag works too.",
+    "Use Road for the drivable deck, Beam for structure, Cable for tension.",
+    "Watch the budget: 1 star for crossing, 2 and 3 stars for cheaper designs.",
+    "Press TEST. If a member turns red it is about to let go - brace it and try again."
+  ],
+  "levels": "1000 levels · 20 worlds + daily and sandbox",
+  "saveKey": "bridge-buddies-save-v1"
+}
