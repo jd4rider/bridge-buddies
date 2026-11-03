@@ -33,10 +33,21 @@ Public URL: `https://jd4rider.github.io/bridge-buddies/play/`.
 The game is listed in `littlejoyarcade/src/data/games.ts` and in the Supabase `games`
 table (which is what the live site actually renders). Publish with:
 
+Two paths, depending on what the machine has:
+
 ```bash
+# 1. Postgres password (direct connection)
 cd ~/Programming/littlejoyarcade
 SUPABASE_DB_PASSWORD=... node scripts/publish-game.mjs ../bridge-buddies/arcade-manifest.json
+
+# 2. Signed-in Supabase CLI, no DB password needed
+KEY=$(npx supabase projects api-keys --project-ref fqovramltegcfiyebyrt \
+  | awk -F'|' '/service_role/{gsub(/[[:space:]]/,"",$2); print $2; exit}')
+SUPABASE_SERVICE_ROLE_KEY="$KEY" node scripts/publish-game-rest.mjs ../bridge-buddies/arcade-manifest.json
 ```
+
+The REST path upserts on `id`, is safe to re-run, and uses the service role (which
+bypasses the admin-only RLS policy on `public.games`).
 
 `arcade-manifest.json` must match the catalogue entry: same `id`, `playUrl` and
 `saveKey`.
