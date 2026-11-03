@@ -106,6 +106,11 @@ export class BridgeApp {
         zone: this.level.zone,
       }),
       physics: () => this.stage.scene.isPhysicsEnabled(),
+      buddy: () => ({
+        visible: this.truck ? this.truck.root.isEnabled() : false,
+        x: this.truck ? this.truck.root.position.x : 0,
+        y: this.truck ? this.truck.root.position.y : 0,
+      }),
       project: (x: number, y: number) => {
         const engine = this.stage.engine
         const screen = Vector3.Project(
@@ -220,6 +225,10 @@ export class BridgeApp {
     persist(this.save)
     this.rebuild()
     this.hud.setTools(this.level.materials, this.tool, this.material)
+    this.parkBuddy()
+    if (this.design.members.length === 0 && this.level.index <= 3) {
+      this.hud.toast('Drag from the near peg to the far bank to lay road.')
+    }
   }
 
   /** Repair levels start from the reference with a few members missing. */
@@ -252,6 +261,7 @@ export class BridgeApp {
     this.tool = 'deck'
     this.rebuild()
     this.hud.setTools(this.level.materials, this.tool, this.material)
+    this.parkBuddy()
   }
 
   private startSandbox(): void {
@@ -279,6 +289,7 @@ export class BridgeApp {
     this.tool = 'deck'
     this.rebuild()
     this.hud.setTools(this.level.materials, this.tool, this.material)
+    this.parkBuddy()
   }
 
   private updateHeader(): void {
@@ -354,12 +365,10 @@ export class BridgeApp {
     audio.play('tap')
   }
 
+  /** After a run, go back to the same design so a failure costs a test, not the build. */
   private retry(): void {
     this.hud.hideResult()
     this.stopTest(true)
-    this.design = emptyDesign(this.level.anchors, this.level.grid)
-    this.history = []
-    this.future = []
     this.broken.clear()
     this.rebuild()
     this.mode = 'build'
@@ -580,7 +589,8 @@ export class BridgeApp {
   }
 
   private stopTest(silent = false): void {
-    if (this.mode !== 'test') return
+    // 'done' counts too: the run is over, and the wreck has to be cleared.
+    if (this.mode !== 'test' && this.mode !== 'done') return
     this.mode = 'build'
     this.hud.setTesting(false)
     this.broken.clear()
@@ -588,23 +598,31 @@ export class BridgeApp {
       this.design = this.savedDesign
       this.savedDesign = null
     }
+    this.chain = null
     this.rebuild()
     this.stage.bridge.showStress(null)
-    this.truck?.setVisible(false)
-    this.chain = null
+    this.parkBuddy()
     if (!silent) this.stage.frameLevel(this.level)
   }
 
-  private spawnTruck(spec: VehicleSpec): void {
+  private spawnTruck(spec: VehicleSpec, placement: 'deck' | 'bank' = 'deck'): void {
     this.truck?.dispose()
     this.truck = new TruckView(this.stage.scene, spec)
-    this.truck.setVisible(false)
-    if (!this.chain) this.chain = deckChain(this.design, this.level.gap, this.level.rightDeckY)
-    if (this.chain) {
-      const start = this.deckPoint(this.chain, 0.3, null)
-      if (start) this.truck.place(start.x, start.y, 0, start.pitch)
+    if (placement === 'deck') {
+      if (!this.chain) this.chain = deckChain(this.design, this.level.gap, this.level.rightDeckY)
+      const start = this.chain ? this.deckPoint(this.chain, 0.3, null) : null
+      if (start) {
+        this.truck.place(start.x, start.y, 0, start.pitch)
+        return
+      }
     }
-    this.truck.setVisible(true)
+    // Bank top is the left shore lip: ground at leftDeckY, surface 0.23 above it.
+    this.truck.park(-1.7, this.level.leftDeckY + 0.23)
+  }
+
+  /** The buddy waits on the near bank until there is a deck worth testing. */
+  private parkBuddy(): void {
+    this.spawnTruck(VEHICLES[this.level.vehicle], 'bank')
   }
 
   private animateTest(dt: number): void {

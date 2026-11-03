@@ -44,6 +44,14 @@ await page.waitForTimeout(600)
 await shot('build-empty')
 
 console.log('havok physics:', await page.evaluate(() => window.__bb.physics()))
+// Nothing is built yet, so the buddy must be waiting on the near bank, not
+// hovering over the gap where the menu demo left it.
+const parked = await page.evaluate(() => window.__bb.buddy())
+console.log('buddy at level start:', JSON.stringify(parked))
+if (parked.visible && parked.x > -0.5) {
+  console.error(`Buddy is over the water at x=${parked.x} before anything was built`)
+  process.exit(1)
+}
 const info = await page.evaluate(() => window.__bb.info())
 console.log('geometry:', JSON.stringify(info))
 
@@ -104,6 +112,23 @@ const heading = (await page.textContent('#result h2'))?.trim()
 const reason = (await page.textContent('#result .reason'))?.trim()
 console.log('result:', heading, '—', reason)
 await shot('result')
+
+// Rebuilding must return the player to the bridge they tested, not an empty gap.
+const costBefore = (await page.textContent('#cost'))?.trim()
+await page.click('#result [data-action="retry"]')
+await page.waitForTimeout(400)
+const costAfter = (await page.textContent('#cost'))?.trim()
+console.log('rebuild keeps the design:', costBefore, '->', costAfter)
+if (costBefore !== costAfter) {
+  console.error(`Rebuild changed the design: ${costBefore} -> ${costAfter}`)
+  process.exit(1)
+}
+const reparked = await page.evaluate(() => window.__bb.buddy())
+if (reparked.visible && reparked.x > -0.5) {
+  console.error(`Buddy was left in the gap at x=${reparked.x} after rebuilding`)
+  process.exit(1)
+}
+await shot('build-after-retry')
 
 await browser.close()
 

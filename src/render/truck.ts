@@ -9,6 +9,9 @@ import {
 } from '@babylonjs/core'
 import type { VehicleSpec } from '../core/types'
 
+/** Half the deck plank's thickness, in metres (see BridgeView.createMember). */
+const DECK_HALF_THICKNESS = 0.07
+
 /**
  * A buddy: rounded boxes and four wheels, built from primitives so there are no
  * downloaded models. It pitches with the deck and bounces on its springs.
@@ -90,11 +93,22 @@ export class TruckView {
    * `pitch` the deck slope, and `distance` drives wheel rotation.
    */
   place(x: number, deckY: number, sag: number, pitch: number, z = 0): void {
-    // Drop by the wheel radius so the tyres sit on the deck, not in it.
-    this.root.position.set(x, deckY - sag - 0.22, z)
+    // The root origin is the bottom of the tyres, and the deck plank is centred
+    // on the structural node line, so add half its thickness to ride on top.
+    this.root.position.set(x, deckY - sag + DECK_HALF_THICKNESS, z)
     this.root.rotation.z = Math.max(-0.6, Math.min(0.6, pitch))
     this.bounce += 0.4
     this.body.position.y = Math.sin(this.bounce) * 0.012
+  }
+
+  /**
+   * Wait on solid ground: level (no tilt, no bounce), before any bridge exists.
+   * Without this the buddy would sit wherever the last mode left it.
+   */
+  park(x: number, groundY: number): void {
+    this.root.position.set(x, groundY, 0)
+    this.root.rotation.z = 0
+    this.body.position.y = 0
   }
 
   spinWheels(distance: number): void {
